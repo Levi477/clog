@@ -1,4 +1,6 @@
 use super::folder::Folder;
+use aes_gcm::{Aes256Gcm, AesGcm, Key, KeyInit, Nonce, aead::Aead, aes::cipher};
+use base64::{Engine, engine::general_purpose};
 use chrono::Local;
 // use linked_hash_map::LinkedHashMap as HashMap;
 use serde::{Deserialize, Serialize};
@@ -32,7 +34,33 @@ impl Metadata {
         }
     }
 
-    // fn get_metadata_length(&self)
+    fn get_serialized_metadata(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+
+    pub fn get_encrypted_metadata(&self, base64_key: &str, base64_nonce: &str) -> String {
+        let serialized_data = self.get_serialized_metadata();
+        let plaintext = serialized_data.as_bytes();
+
+        // decode key and make key for encryption
+        let key_bytes = general_purpose::STANDARD.decode(base64_key).unwrap();
+        let key = Key::from_slice(&key_bytes);
+
+        // deocde nonce and make nonce for encryption
+        let nonce_bytes = general_purpose::STANDARD.decode(base64_nonce).unwrap();
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        // make cipher
+        let cipher = Aes256Gcm::new(key);
+
+        // encrypt plaintext
+        let ciphertext = cipher.encrypt(nonce, plaintext);
+
+        // convert ciphertext
+        let base64_ciphertext = general_purpose::STANDARD.encode(&ciphertext);
+
+        base64_ciphertext
+    }
 
     pub fn add_file(
         &mut self,
