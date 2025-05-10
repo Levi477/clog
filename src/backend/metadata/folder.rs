@@ -16,7 +16,7 @@ impl Folder {
         }
     }
 
-    pub fn add_file(&mut self, filename: &String, offset: usize, length: usize) {
+    pub fn add_file(&mut self, filename: &str, offset: usize, length: usize) {
         let key = filename.to_string();
         let value = File::new(offset, length);
         self.data.insert(key, value);

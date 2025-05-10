@@ -1,14 +1,16 @@
 use super::folder::Folder;
-use aes_gcm::{Aes256Gcm, AesGcm, Key, KeyInit, Nonce, aead::Aead, aes::cipher};
-use base64::{Engine, engine::general_purpose};
+use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
+use base64::{
+    Engine,
+    engine::{self, general_purpose},
+};
 use chrono::Local;
-// use linked_hash_map::LinkedHashMap as HashMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
-    data: HashMap<String, Folder>,
+    pub data: HashMap<String, Folder>,
     created_at: String,
 }
 
@@ -38,13 +40,14 @@ impl Metadata {
         serde_json::to_string(self).unwrap()
     }
 
-    pub fn get_encrypted_metadata(&self, base64_key: &str, base64_nonce: &str) -> String {
+    pub fn get_encrypted_metadata(&self, base64_key: &String, base64_nonce: &String) -> String {
         let serialized_data = self.get_serialized_metadata();
+        println!("serialized_metadata : {}", serialized_data);
         let plaintext = serialized_data.as_bytes();
 
         // decode key and make key for encryption
         let key_bytes = general_purpose::STANDARD.decode(base64_key).unwrap();
-        let key = Key::from_slice(&key_bytes);
+        let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
 
         // deocde nonce and make nonce for encryption
         let nonce_bytes = general_purpose::STANDARD.decode(base64_nonce).unwrap();
@@ -54,7 +57,7 @@ impl Metadata {
         let cipher = Aes256Gcm::new(key);
 
         // encrypt plaintext
-        let ciphertext = cipher.encrypt(nonce, plaintext);
+        let ciphertext = cipher.encrypt(nonce, plaintext).unwrap();
 
         // convert ciphertext
         let base64_ciphertext = general_purpose::STANDARD.encode(&ciphertext);
@@ -62,13 +65,7 @@ impl Metadata {
         base64_ciphertext
     }
 
-    pub fn add_file(
-        &mut self,
-        filename: &String,
-        foldername: &String,
-        offset: usize,
-        length: usize,
-    ) {
+    pub fn add_file(&mut self, filename: &str, foldername: &str, offset: usize, length: usize) {
         let folder = self.data.get_mut(foldername);
         match folder {
             Some(f) => {
@@ -81,7 +78,7 @@ impl Metadata {
         }
     }
 
-    pub fn update_nonce(&mut self, filename: &String, foldername: &String) {
+    pub fn update_file_nonce(&mut self, filename: &String, foldername: &String) {
         let folder = self.data.get_mut(foldername);
         match folder {
             Some(f) => {
@@ -94,28 +91,46 @@ impl Metadata {
         }
     }
 
-    // fn update_offset_and_length(
-    //     &mut self,
-    //     filename: &String,
-    //     foldername: &String,
-    //     delta_offset: usize,
-    //     length: usize,
-    // ) {
-    //     let folder = self.data.get_mut(foldername);
-    //     match folder {
-    //         Some(f) => f.update_offset_and_length(filename, delta_offset, length),
-    //         None => println!(
-    //             "metadata/metadata.rs/update_offset_and_length : {} folder doesn't exist",
-    //             foldername
-    //         ),
-    //     }
-    // }
-
-    pub fn update_all_offset(&mut self, delta_offset: usize) {
+    pub fn update_all_file_offset(&mut self, delta_offset: usize) {
         for (_, folder) in self.data.iter_mut() {
             for (_, file) in folder.data.iter_mut() {
                 file.update_offset(delta_offset);
             }
         }
+    }
+
+    pub fn parse_encrypted_metadata(
+        base64_encrypted_metadata: &String,
+        base64_key: &String,
+        base64_nonce: &String,
+    ) -> Self {
+        // extract key from base64
+        let key_bytes = engine::general_purpose::STANDARD
+            .decode(base64_key)
+            .unwrap();
+        let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
+
+        // extract nonce from base64
+        let nonce_bytes = engine::general_purpose::STANDARD
+            .decode(base64_nonce)
+            .unwrap();
+        let nonce = Nonce::from_slice(&nonce_bytes);
+
+        // extract encrypted_metadata from base64
+        let ciphertext_bytes = engine::general_purpose::STANDARD
+            .decode(base64_encrypted_metadata)
+            .unwrap();
+
+        // make a cipher from key
+        let cipher = Aes256Gcm::new(key);
+
+        // decrypt encrypted_metadata (pass the byte slice)
+        let metadata_serialized_bytes = cipher.decrypt(&nonce, ciphertext_bytes.as_ref()).unwrap();
+
+        // Convert decrypted bytes to String
+        let metadata_serialized = String::from_utf8(metadata_serialized_bytes).unwrap();
+
+        // Deserialize metadata to struct
+        serde_json::from_str(&metadata_serialized).unwrap()
     }
 }
