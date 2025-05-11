@@ -22,8 +22,10 @@ pub fn make_new_clogfile(username: &str, password: &str) -> File {
     let base64_nonce = get_base64_nonce();
 
     let base64_key = derive_key_base64(password, &base64_salt);
+    println!("base64_key : {}", &base64_key);
+    println!("base64_nonce : {}", &base64_nonce);
 
-    let encrypted_metadata = metadata.get_encrypted_metadata(&base64_key, &base64_nonce);
+    let encrypted_metadata = metadata.get_base64_encrypted_metadata(&base64_key, &base64_nonce);
 
     let metadata_length = encrypted_metadata.len();
 
@@ -69,6 +71,6 @@ mod test {
 
     #[test]
     pub fn test_make_new_file() {
-        super::make_new_clogfile("asha", "levi4747");
+        todo!()
     }
 }

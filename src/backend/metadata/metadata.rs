@@ -40,9 +40,12 @@ impl Metadata {
         serde_json::to_string(self).unwrap()
     }
 
-    pub fn get_encrypted_metadata(&self, base64_key: &String, base64_nonce: &String) -> String {
+    pub fn get_base64_encrypted_metadata(
+        &self,
+        base64_key: &String,
+        base64_nonce: &String,
+    ) -> String {
         let serialized_data = self.get_serialized_metadata();
-        println!("serialized_metadata : {}", serialized_data);
         let plaintext = serialized_data.as_bytes();
 
         // decode key and make key for encryption
@@ -99,7 +102,7 @@ impl Metadata {
         }
     }
 
-    pub fn parse_encrypted_metadata(
+    pub fn parse_base64_encrypted_metadata(
         base64_encrypted_metadata: &String,
         base64_key: &String,
         base64_nonce: &String,
@@ -124,7 +127,7 @@ impl Metadata {
         // make a cipher from key
         let cipher = Aes256Gcm::new(key);
 
-        // decrypt encrypted_metadata (pass the byte slice)
+        // decrypt encrypted_metadata
         let metadata_serialized_bytes = cipher.decrypt(&nonce, ciphertext_bytes.as_ref()).unwrap();
 
         // Convert decrypted bytes to String
