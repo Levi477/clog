@@ -1,10 +1,11 @@
 use super::super::metadata;
 use crate::backend::{
-    header::utils::{HEADER_LENGTH, get_base64_nonce, get_base64_salt, init},
-    metadata::metadata::Metadata,
-    user::utils::derive_key::derive_key_base64,
+    header::utils::{HEADER_LENGTH, init},
+    user::utils::{
+        derive_key::derive_key_base64,
+        generate_keys::{generate_base64_nonce, generate_base64_salt},
+    },
 };
-use chrono::Local;
 use std::{
     fs::File,
     io::{Seek, SeekFrom, Write},
@@ -18,12 +19,10 @@ fn write_from_offset(file: &mut File, content: &str, offset: usize) {
 
 pub fn make_new_clogfile(username: &str, password: &str) -> File {
     let metadata = metadata::init::init();
-    let base64_salt = get_base64_salt();
-    let base64_nonce = get_base64_nonce();
+    let base64_salt = generate_base64_salt();
+    let base64_nonce = generate_base64_nonce();
 
     let base64_key = derive_key_base64(password, &base64_salt);
-    println!("base64_key : {}", &base64_key);
-    println!("base64_nonce : {}", &base64_nonce);
 
     let encrypted_metadata = metadata.get_base64_encrypted_metadata(&base64_key, &base64_nonce);
 
