@@ -68,8 +68,8 @@ pub fn make_new_clogfile(username: &str, password: &str) -> File {
 #[cfg(test)]
 mod test {
 
-    #[test]
-    pub fn test_make_new_file() {
-        todo!()
-    }
+    // #[test]
+    // pub fn test_make_new_file() {
+    //     todo!()
+    // }
 }

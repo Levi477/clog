@@ -1,7 +1,9 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::{BufRead, BufReader, Seek, SeekFrom, Write},
 };
+
+use crate::backend::user::utils::generate_keys::generate_base64_salt;
 
 pub const HEADER_LENGTH: usize = 72;
 
@@ -54,17 +56,45 @@ pub fn parse_header_from_file(file: &File) -> (String, String, usize, usize, Str
     )
 }
 
-pub fn update_metadata_offset_and_length(file: &File, delta_offset: usize, length: usize) {
-    todo!()
+pub fn update_metadata_offset_and_length_in_file(
+    file: &mut File,
+    delta_offset: usize,
+    length: usize,
+) {
+    let (base64_salt, base64_nonce, mut metadata_length, mut metadata_offset, _) =
+        parse_header_from_file(file);
+    metadata_length = length;
+    metadata_offset += delta_offset;
+    let header_line2 = format!(
+        "{}.{}.{:08}.{:08}",
+        base64_salt, base64_nonce, metadata_length, metadata_offset
+    );
+    file.seek(SeekFrom::Start(12)).unwrap();
+    file.write_all(header_line2.as_bytes()).unwrap();
+    file.write_all(b"\n").unwrap();
 }
 
-// pub fn update_nonce_in_file
+pub fn update_nonce_in_file(file: &mut File) {
+    let (base64_salt, mut base64_nonce, metadata_length, metadata_offset, _) =
+        parse_header_from_file(file);
+    base64_nonce = generate_base64_salt();
+    let header_line2 = format!(
+        "{}.{}.{:08}.{:08}",
+        base64_salt, base64_nonce, metadata_length, metadata_offset
+    );
+
+    file.seek(SeekFrom::Start(12)).unwrap();
+    file.write_all(header_line2.as_bytes()).unwrap();
+    file.write_all(b"\n").unwrap();
+}
 
 #[cfg(test)]
 mod test {
-    use std::fs::File;
+    use std::fs::{File, OpenOptions};
 
-    use super::parse_header_from_file;
+    use super::{
+        parse_header_from_file, update_metadata_offset_and_length_in_file, update_nonce_in_file,
+    };
     #[test]
     fn test_parse_header() {
         let file = File::open("deep.clog").unwrap();
@@ -73,5 +103,23 @@ mod test {
             "salt : {},nonce : {},metadata_length : {},metadata_offset : {},version_id : {}",
             a, b, c, d, e
         );
+    }
+    #[test]
+    fn test_update_offset_and_length() {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("deep.clog")
+            .unwrap();
+        update_metadata_offset_and_length_in_file(&mut file, 10, 1000);
+    }
+    #[test]
+    fn test_update_nonce() {
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("deep.clog")
+            .unwrap();
+        update_nonce_in_file(&mut file);
     }
 }

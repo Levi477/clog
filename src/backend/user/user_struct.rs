@@ -1,10 +1,6 @@
-use std::path::{Path, PathBuf};
 
 use aes_gcm::aead::{OsRng, rand_core::RngCore};
-use pbkdf2::pbkdf2_hmac_array;
-use sha2::Sha256;
 
-use crate::backend::header;
 
 pub struct User {
     username: String,
