@@ -1,4 +1,11 @@
 use super::folder::Folder;
+use crate::backend::{
+    file_operations::utils::open_file_read_write,
+    header::utils::{
+        parse_header_from_file, update_metadata_offset_and_length_in_file, update_nonce_in_file,
+    },
+    user::utils::derive_key::derive_key_base64,
+};
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
 use base64::{
     Engine,
@@ -6,7 +13,12 @@ use base64::{
 };
 use chrono::Local;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, usize};
+use std::{
+    collections::HashMap,
+    io::{Read, Seek, SeekFrom, Write},
+    path::PathBuf,
+    usize,
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
@@ -40,11 +52,20 @@ impl Metadata {
         serde_json::to_string(self).unwrap()
     }
 
-    pub fn get_base64_encrypted_metadata(
+    /// gets nonce and salt from file
+    /// and convert given metadata to base64_encrypted_metadata using user password
+
+    pub fn to_base64_encrypted_metadata(
         &self,
-        base64_key: &String,
-        base64_nonce: &String,
+        password: &String,
+        clogfile_path: &PathBuf,
     ) -> String {
+        // get nonce,salt and offset fro metadata
+        let (base64_salt, base64_nonce, _, _, _) = parse_header_from_file(clogfile_path);
+
+        // derive key using password and salt
+        let base64_key = derive_key_base64(password, &base64_salt);
+
         let serialized_data = self.get_serialized_metadata();
         let plaintext = serialized_data.as_bytes();
 
@@ -102,7 +123,7 @@ impl Metadata {
         }
     }
 
-    pub fn parse_base64_encrypted_metadata(
+    fn parse_base64_encrypted_metadata(
         base64_encrypted_metadata: &String,
         base64_key: &String,
         base64_nonce: &String,
@@ -135,5 +156,61 @@ impl Metadata {
 
         // Deserialize metadata to struct
         serde_json::from_str(&metadata_serialized).unwrap()
+    }
+    pub fn extract_metadata_from_file(clogfile_path: &PathBuf, password: &str) -> Self {
+        // get nonce,salt and offset fro metadata
+        let (base64_salt, base64_nonce, metadata_length, metadata_offset, _) =
+            parse_header_from_file(clogfile_path);
+
+        // derive key using password and salt
+        let base64_key = derive_key_base64(password, &base64_salt);
+
+        let mut file = open_file_read_write(clogfile_path);
+
+        // get the cursur to offset to read metadata
+        file.seek(SeekFrom::Start(metadata_offset.try_into().unwrap()))
+            .unwrap();
+
+        // make a container to store given bytes from file
+        let mut base64_encrypted_metadata_bytes = vec![0u8; metadata_length];
+
+        // read given bytes from file
+        file.read(&mut base64_encrypted_metadata_bytes).unwrap();
+
+        // convert given bytes to string
+        let base64_encrypted_metadata = String::from_utf8(base64_encrypted_metadata_bytes).unwrap();
+
+        // get metadata struct from given base64_encrypted_metadata
+        let metadata = Metadata::parse_base64_encrypted_metadata(
+            &base64_encrypted_metadata,
+            &base64_key,
+            &base64_nonce,
+        );
+
+        metadata
+    }
+
+    pub fn update_metadata_in_file(&self, clogfile_path: &PathBuf, password: &String) {
+        // first update nonce in file
+        update_nonce_in_file(clogfile_path);
+
+        // get current base64_encrypted_metadata
+        let base64_encrypted_metadata = self.to_base64_encrypted_metadata(password, clogfile_path);
+
+        // get offset from header
+        let (_, _, _, metadata_offset, _) = parse_header_from_file(clogfile_path);
+
+        let new_metadata_length = base64_encrypted_metadata.len();
+
+        let mut file = open_file_read_write(clogfile_path);
+
+        // write from that offset and update length in header
+        file.seek(SeekFrom::Start(metadata_offset.try_into().unwrap()))
+            .unwrap();
+        file.write_all(base64_encrypted_metadata.as_bytes())
+            .unwrap();
+
+        // update length of metadata in header section
+        update_metadata_offset_and_length_in_file(clogfile_path, 0, new_metadata_length);
     }
 }
