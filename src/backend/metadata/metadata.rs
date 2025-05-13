@@ -1,6 +1,6 @@
 use super::folder::Folder;
 use crate::backend::{
-    file_operations::utils::open_file_read_write,
+    file_operations::utils::{open_file_read, open_file_read_write},
     header::utils::{
         parse_header_from_file, update_metadata_offset_and_length_in_file, update_nonce_in_file,
     },
@@ -165,7 +165,7 @@ impl Metadata {
         // derive key using password and salt
         let base64_key = derive_key_base64(password, &base64_salt);
 
-        let mut file = open_file_read_write(clogfile_path);
+        let mut file = open_file_read(clogfile_path);
 
         // get the cursur to offset to read metadata
         file.seek(SeekFrom::Start(metadata_offset.try_into().unwrap()))

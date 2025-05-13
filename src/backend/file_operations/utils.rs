@@ -25,17 +25,10 @@ pub fn open_file_read_write(path: &PathBuf) -> File {
     file
 }
 
-// // this function currently doesn't work hence using above function every time
-// pub fn open_file_read(path: &PathBuf) -> File {
-//     println!("Trying to open file at path: {:?}", path);
-//
-//     let file = OpenOptions::new()
-//         .create(true)
-//         .read(true)
-//         .open(path)
-//         .unwrap();
-//     file
-// }
+pub fn open_file_read(path: &PathBuf) -> File {
+    let file = OpenOptions::new().read(true).open(path).unwrap();
+    file
+}
 
 pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
     let metadata = metadata::init::init();
@@ -47,7 +40,6 @@ pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
         init("0.0.1", 312, HEADER_LENGTH, &base64_salt, &base64_nonce);
 
     let mut file = open_file_read_write(clogfile_path);
-    println!("file created succesfully");
 
     // write header section
 
@@ -55,8 +47,6 @@ pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
     file.write_all(b"\n").unwrap();
     file.write_all(header_line2.as_bytes()).unwrap();
     file.write_all(b"\n").unwrap();
-
-    println!("header section written in file succesfully");
 
     let encrypted_metadata = metadata.to_base64_encrypted_metadata(&password, clogfile_path);
 
@@ -72,16 +62,15 @@ pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
 
 #[cfg(test)]
 mod test {
-    use chrono::Local;
-
     use crate::backend::{file_operations::utils::make_new_clogfile, metadata::metadata::Metadata};
+    use chrono::Local;
     use std::env;
     #[test]
     fn test_updated_metadata() {
         let mut clogfile_path = env::current_dir().unwrap();
         clogfile_path.push("deep.clog");
         let password = String::from("deep0904");
-        make_new_clogfile(&password, &clogfile_path);
+        // make_new_clogfile(&password, &clogfile_path);
         let mut metadata = Metadata::extract_metadata_from_file(&clogfile_path, &password);
 
         println!(
@@ -89,7 +78,7 @@ mod test {
             serde_json::to_string(&metadata).unwrap()
         );
         metadata.add_file(
-            "testfile.txt",
+            "testfile2.txt",
             &Local::now().format("%d/%m/%Y").to_string(),
             10,
             90,

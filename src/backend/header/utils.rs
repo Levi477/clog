@@ -4,8 +4,8 @@ use std::{
 };
 
 use crate::backend::{
-    file_operations::utils::open_file_read_write,
-    user::utils::generate_keys::{generate_base64_nonce, generate_base64_salt},
+    file_operations::utils::{open_file_read, open_file_read_write},
+    user::utils::generate_keys::generate_base64_nonce,
 };
 
 pub const HEADER_LENGTH: usize = 72;
@@ -39,7 +39,7 @@ pub fn init(
 /// (base64_salt,base64_nonce,metadata_length,metadata_offset,version_id)
 
 pub fn parse_header_from_file(clogfile_path: &PathBuf) -> (String, String, usize, usize, String) {
-    let file = open_file_read_write(clogfile_path);
+    let file = open_file_read(clogfile_path);
 
     let mut header_line1 = String::new();
     let mut header_line2 = String::new();
@@ -47,9 +47,7 @@ pub fn parse_header_from_file(clogfile_path: &PathBuf) -> (String, String, usize
     let mut line_reader = buf_reader.lines();
 
     header_line1 = line_reader.next().unwrap().unwrap();
-    println!("header_line1 : {}", header_line1);
     header_line2 = line_reader.next().unwrap().unwrap();
-    println!("header_line2 : {}", header_line2);
 
     let (_, version_id) = header_line1.trim().split_at(6);
     let array: Vec<&str> = header_line2.trim().split(".").collect();
