@@ -1,11 +1,10 @@
-use std::{
-    io::{BufRead, BufReader, Seek, SeekFrom, Write},
-    path::PathBuf,
-};
-
 use crate::backend::{
     file_operations::utils::{open_file_read, open_file_read_write},
     user::utils::generate_keys::generate_base64_nonce,
+};
+use std::{
+    io::{BufRead, BufReader, Seek, SeekFrom, Write},
+    path::PathBuf,
 };
 
 pub const HEADER_LENGTH: usize = 72;

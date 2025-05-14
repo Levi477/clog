@@ -1,8 +1,9 @@
-use super::super::metadata;
+use super::{super::metadata, content::add_file_with_content};
 use crate::backend::{
     header::utils::{HEADER_LENGTH, init, update_metadata_offset_and_length_in_file},
     user::utils::generate_keys::{generate_base64_nonce, generate_base64_salt},
 };
+use chrono::Local;
 use std::{
     fs::{File, OpenOptions},
     io::{Seek, SeekFrom, Write},
@@ -31,7 +32,7 @@ pub fn open_file_read(path: &PathBuf) -> File {
 }
 
 pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
-    let metadata = metadata::init::init();
+    let mut metadata = metadata::init::init();
     let base64_salt = generate_base64_salt();
     let base64_nonce = generate_base64_nonce();
 
@@ -48,47 +49,48 @@ pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
     file.write_all(header_line2.as_bytes()).unwrap();
     file.write_all(b"\n").unwrap();
 
-    let encrypted_metadata = metadata.to_base64_encrypted_metadata(&password, clogfile_path);
+    // foldername
+    let foldername = Local::now().format("%d/%m/%Y").to_string();
 
-    let metadata_length = encrypted_metadata.len();
+    // Welcome file parameteres
+    let content =
+        "This is the first log.\nEnjoy clog.\nWrite log everyday.\nMake note of everything.";
 
-    // write metadata section
-
-    write_from_offset(&mut file, &encrypted_metadata, HEADER_LENGTH);
-
-    // update tmp metadata_length to real length
-    update_metadata_offset_and_length_in_file(clogfile_path, 0, metadata_length);
+    // write file content in file
+    add_file_with_content(
+        &mut metadata,
+        password,
+        &foldername,
+        "Welcome",
+        content,
+        clogfile_path,
+    );
 }
 
 #[cfg(test)]
 mod test {
-    use crate::backend::{file_operations::utils::make_new_clogfile, metadata::metadata::Metadata};
+    use crate::backend::{
+        file_operations::{content::decrypt_content_from_file, utils::make_new_clogfile},
+        metadata::metadata::Metadata,
+    };
     use chrono::Local;
     use std::env;
+
     #[test]
     fn test_updated_metadata() {
+        let foldername = Local::now().format("%d/%m/%Y").to_string();
         let mut clogfile_path = env::current_dir().unwrap();
-        clogfile_path.push("deep.clog");
-        let password = String::from("deep0904");
-        // make_new_clogfile(&password, &clogfile_path);
-        let mut metadata = Metadata::extract_metadata_from_file(&clogfile_path, &password);
-
+        clogfile_path.push("harsh.clog");
+        let password = String::from("123");
+        make_new_clogfile(&password, &clogfile_path);
+        let metadata = Metadata::extract_metadata_from_file(&clogfile_path, &password);
         println!(
             "extracted metadata from file : {}",
             serde_json::to_string(&metadata).unwrap()
         );
-        metadata.add_file(
-            "testfile2.txt",
-            &Local::now().format("%d/%m/%Y").to_string(),
-            10,
-            90,
-        );
-        metadata.update_metadata_in_file(&clogfile_path, &password);
-        metadata = Metadata::extract_metadata_from_file(&clogfile_path, &password);
-
         println!(
-            "extracted metadata from file : {}",
-            serde_json::to_string(&metadata).unwrap()
-        );
+            "content from Welcome : {}",
+            decrypt_content_from_file(&metadata, &foldername, "Welcome", &clogfile_path)
+        )
     }
 }

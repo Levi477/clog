@@ -3,11 +3,11 @@ use base64::{Engine as _, engine::general_purpose};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct File {
-    created_at: String,
-    offset: usize,
-    length: usize,
+    pub created_at: String,
+    pub offset: usize,
+    pub length: usize,
     key: String,
     nonce: String,
 }
@@ -49,5 +49,10 @@ impl File {
 
     pub fn update_length(&mut self, length: usize) {
         self.length = length;
+    }
+
+    /// gives (base64_key,base64_nonce,offset,length) of file
+    pub fn get_file_parameters(&self) -> (&String, &String, usize, usize) {
+        (&self.key, &self.nonce, self.offset, self.length)
     }
 }

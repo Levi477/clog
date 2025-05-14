@@ -1,17 +1,17 @@
-use super::folder::Folder;
+use super::{file::File, folder::Folder};
 use crate::backend::{
-    file_operations::utils::{open_file_read, open_file_read_write},
+    file_operations::{
+        content::parse_base64_encrypted_data,
+        utils::{open_file_read, open_file_read_write},
+    },
     header::utils::{
         parse_header_from_file, update_metadata_offset_and_length_in_file, update_nonce_in_file,
     },
     user::utils::derive_key::derive_key_base64,
 };
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
-use base64::{
-    Engine,
-    engine::{self, general_purpose},
-};
-use chrono::Local;
+use base64::{Engine, engine::general_purpose};
+use chrono::{Local, NaiveTime};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -22,7 +22,7 @@ use std::{
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
-    pub data: HashMap<String, Folder>,
+    pub folders: HashMap<String, Folder>,
     created_at: String,
 }
 
@@ -30,22 +30,54 @@ impl Metadata {
     pub fn new() -> Self {
         let created_at = Local::now().format("%d/%m/%Y").to_string();
         Metadata {
-            data: HashMap::new(),
+            folders: HashMap::new(),
             created_at,
         }
     }
 
     pub fn add_latest_folder(&mut self) {
         let date = Local::now().format("%d/%m/%Y").to_string();
-        let key = self.data.contains_key(&date);
+        let key = self.folders.contains_key(&date);
 
         match key {
             true => println!("{} folder already exists", date),
             false => {
                 let folder = Folder::new();
-                self.data.insert(date, folder);
+                self.folders.insert(date, folder);
             }
         }
+    }
+
+    fn get_all_files_under_folder(&self, foldername: &str) -> &HashMap<String, File> {
+        &self.folders.get(foldername).unwrap().files
+    }
+
+    pub fn update_file_length(&mut self, foldername: &str, filename: &str, length: usize) {
+        let filemap = self.folders.get_mut(foldername).unwrap();
+        let file = filemap.files.get_mut(filename).unwrap();
+        file.update_length(length);
+    }
+
+    fn get_all_clone_files_below_given_file(
+        &self,
+        foldername: &str,
+        filename: &str,
+    ) -> HashMap<String, File> {
+        let filemap = self.get_all_files_under_folder(foldername);
+        let basefile_time = &filemap.get(filename).unwrap().created_at;
+        let basefile_time = NaiveTime::parse_from_str(&basefile_time, "%I:%M %p").unwrap();
+
+        filemap
+            .iter()
+            .filter_map(|(name, file)| {
+                let file_time = NaiveTime::parse_from_str(&file.created_at, "%I:%M %p").unwrap();
+                if file_time > basefile_time {
+                    Some((name.clone(), file.clone()))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     fn get_serialized_metadata(&self) -> String {
@@ -90,7 +122,7 @@ impl Metadata {
     }
 
     pub fn add_file(&mut self, filename: &str, foldername: &str, offset: usize, length: usize) {
-        let folder = self.data.get_mut(foldername);
+        let folder = self.folders.get_mut(foldername);
         match folder {
             Some(f) => {
                 f.add_file(filename, offset, length);
@@ -103,7 +135,7 @@ impl Metadata {
     }
 
     pub fn update_file_nonce(&mut self, filename: &String, foldername: &String) {
-        let folder = self.data.get_mut(foldername);
+        let folder = self.folders.get_mut(foldername);
         match folder {
             Some(f) => {
                 f.update_nonce(filename);
@@ -116,8 +148,8 @@ impl Metadata {
     }
 
     pub fn update_all_file_offset(&mut self, delta_offset: usize) {
-        for (_, folder) in self.data.iter_mut() {
-            for (_, file) in folder.data.iter_mut() {
+        for (_, folder) in self.folders.iter_mut() {
+            for (_, file) in folder.files.iter_mut() {
                 file.update_offset(delta_offset);
             }
         }
@@ -128,31 +160,8 @@ impl Metadata {
         base64_key: &String,
         base64_nonce: &String,
     ) -> Self {
-        // extract key from base64
-        let key_bytes = engine::general_purpose::STANDARD
-            .decode(base64_key)
-            .unwrap();
-        let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
-
-        // extract nonce from base64
-        let nonce_bytes = engine::general_purpose::STANDARD
-            .decode(base64_nonce)
-            .unwrap();
-        let nonce = Nonce::from_slice(&nonce_bytes);
-
-        // extract encrypted_metadata from base64
-        let ciphertext_bytes = engine::general_purpose::STANDARD
-            .decode(base64_encrypted_metadata)
-            .unwrap();
-
-        // make a cipher from key
-        let cipher = Aes256Gcm::new(key);
-
-        // decrypt encrypted_metadata
-        let metadata_serialized_bytes = cipher.decrypt(&nonce, ciphertext_bytes.as_ref()).unwrap();
-
-        // Convert decrypted bytes to String
-        let metadata_serialized = String::from_utf8(metadata_serialized_bytes).unwrap();
+        let metadata_serialized =
+            parse_base64_encrypted_data(base64_encrypted_metadata, base64_key, base64_nonce);
 
         // Deserialize metadata to struct
         serde_json::from_str(&metadata_serialized).unwrap()
@@ -213,4 +222,6 @@ impl Metadata {
         // update length of metadata in header section
         update_metadata_offset_and_length_in_file(clogfile_path, 0, new_metadata_length);
     }
+
+    // pub fn update_file_length_and_offset()
 }
