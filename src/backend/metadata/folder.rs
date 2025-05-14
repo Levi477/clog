@@ -35,7 +35,7 @@ impl Folder {
         file.update_nonce();
     }
 
-    pub fn update_offset(&mut self, filename: &str, delta_offset: usize) {
+    pub fn update_offset(&mut self, filename: &str, delta_offset: isize) {
         let file = self.files.get_mut(filename).unwrap();
         file.update_offset(delta_offset);
     }

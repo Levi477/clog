@@ -1,5 +1,6 @@
 use crate::backend::{
     file_operations::utils::{open_file_read, open_file_read_write},
+    metadata,
     user::utils::generate_keys::generate_base64_nonce,
 };
 use std::{
@@ -62,7 +63,7 @@ pub fn parse_header_from_file(clogfile_path: &PathBuf) -> (String, String, usize
 
 pub fn update_metadata_offset_and_length_in_file(
     clogfile_path: &PathBuf,
-    delta_offset: usize,
+    delta_offset: isize,
     length: usize,
 ) {
     let mut file = open_file_read_write(clogfile_path);
@@ -70,12 +71,11 @@ pub fn update_metadata_offset_and_length_in_file(
     let (base64_salt, base64_nonce, mut metadata_length, mut metadata_offset, _) =
         parse_header_from_file(clogfile_path);
     metadata_length = length;
-    metadata_offset += delta_offset;
+    metadata_offset = (metadata_offset as isize + delta_offset) as usize;
     let header_line2 = format!(
         "{}.{}.{:08}.{:08}\n",
         base64_salt, base64_nonce, metadata_length, metadata_offset
     );
-    println!("{}", header_line2);
     file.seek(SeekFrom::Start(12)).unwrap();
     file.write_all(header_line2.as_bytes()).unwrap();
 }

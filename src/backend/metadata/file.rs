@@ -15,7 +15,7 @@ pub struct File {
 impl File {
     pub fn new(offset: usize, length: usize) -> Self {
         // fetch current time
-        let created_at = Local::now().format("%I:%M %p").to_string();
+        let created_at = Local::now().format("%I:%M:%S %p").to_string();
 
         // fill key with random bytes
         let mut key = [0u8; 32];
@@ -43,8 +43,8 @@ impl File {
         self.nonce = tmp_nonce;
     }
 
-    pub fn update_offset(&mut self, delta_offset: usize) {
-        self.offset += delta_offset;
+    pub fn update_offset(&mut self, delta_offset: isize) {
+        self.offset = (self.offset as isize + delta_offset) as usize;
     }
 
     pub fn update_length(&mut self, length: usize) {

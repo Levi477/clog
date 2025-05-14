@@ -65,12 +65,12 @@ impl Metadata {
     ) -> HashMap<String, File> {
         let filemap = self.get_all_files_under_folder(foldername);
         let basefile_time = &filemap.get(filename).unwrap().created_at;
-        let basefile_time = NaiveTime::parse_from_str(&basefile_time, "%I:%M %p").unwrap();
+        let basefile_time = NaiveTime::parse_from_str(&basefile_time, "%I:%M:%S %p").unwrap();
 
         filemap
             .iter()
             .filter_map(|(name, file)| {
-                let file_time = NaiveTime::parse_from_str(&file.created_at, "%I:%M %p").unwrap();
+                let file_time = NaiveTime::parse_from_str(&file.created_at, "%I:%M:%S %p").unwrap();
                 if file_time > basefile_time {
                     Some((name.clone(), file.clone()))
                 } else {
@@ -147,14 +147,6 @@ impl Metadata {
         }
     }
 
-    pub fn update_all_file_offset(&mut self, delta_offset: usize) {
-        for (_, folder) in self.folders.iter_mut() {
-            for (_, file) in folder.files.iter_mut() {
-                file.update_offset(delta_offset);
-            }
-        }
-    }
-
     fn parse_base64_encrypted_metadata(
         base64_encrypted_metadata: &String,
         base64_key: &String,
@@ -214,8 +206,7 @@ impl Metadata {
         let mut file = open_file_read_write(clogfile_path);
 
         // write from that offset and update length in header
-        file.seek(SeekFrom::Start(metadata_offset.try_into().unwrap()))
-            .unwrap();
+        file.seek(SeekFrom::Start(metadata_offset as u64)).unwrap();
         file.write_all(base64_encrypted_metadata.as_bytes())
             .unwrap();
 

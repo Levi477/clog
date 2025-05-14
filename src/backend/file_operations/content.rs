@@ -5,10 +5,99 @@ use crate::backend::{
 };
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
 use base64::{Engine, engine::general_purpose};
+use chrono::NaiveTime;
 use std::{
     io::{Read, Seek, SeekFrom, Write},
+    isize,
     path::PathBuf,
 };
+
+/// 1. Update nonce of file in metadata
+/// 2. Copy all content of files below given file
+/// 3. Update all offset of below file and metadata in metadata and header section
+/// 4. Write new edited content and paste old copied content
+/// 5. Write new updated metadata
+pub fn edit_file_with_content(
+    metadata: &mut Metadata,
+    password: &String,
+    foldername: &str,
+    filename: &str,
+    new_content: &str,
+    clogfile_path: &PathBuf,
+) {
+    // 1. Update nonce of file in metadata
+
+    let folder = metadata.folders.get_mut(foldername).unwrap();
+
+    // update new nonce in metadata
+    folder.files.get_mut(filename).unwrap().update_nonce();
+
+    // get new parameters from file — clone/copy to avoid borrow conflicts
+    let (base64_key, base64_nonce, offset, old_length) = {
+        let (k, n, o, l) = folder.files.get(filename).unwrap().get_file_parameters();
+        (k.clone(), n.clone(), o, l) // clone key & nonce so borrow ends here
+    };
+
+    let base64_encrypted_content =
+        encrypt_and_encode_content_to_base64(new_content, &base64_key, &base64_nonce);
+
+    // update new length of file
+    folder
+        .files
+        .get_mut(filename)
+        .unwrap()
+        .update_length(base64_encrypted_content.len());
+
+    let delta_offset: isize = base64_encrypted_content.len() as isize - old_length as isize;
+
+    // 2. Copy all content of files given below file
+
+    let mut file = open_file_read_write(clogfile_path);
+
+    file.seek(SeekFrom::Start((offset + old_length).try_into().unwrap()))
+        .unwrap();
+    let mut below_file_content_bytes = Vec::new();
+    file.read_to_end(&mut below_file_content_bytes).unwrap();
+
+    // 3. Update all offset of below file and metadata
+
+    // update metadata offset in header section
+    update_metadata_offset_and_length_in_file(clogfile_path, delta_offset, 0);
+
+    // update all offset of below file
+
+    // import basefile time for comparison
+    let basefile_time = {
+        let base_created_at = &folder.files.get(filename).unwrap().created_at;
+        NaiveTime::parse_from_str(base_created_at, "%I:%M:%S %p").unwrap()
+    };
+
+    // check all the files in current folder and update all the offset
+    for (_, file_) in folder.files.iter_mut() {
+        let time = NaiveTime::parse_from_str(&file_.created_at, "%I:%M:%S %p").unwrap();
+        if time > basefile_time {
+            file_.update_offset(delta_offset);
+        }
+    }
+
+    // 4. Write new edited content and paste old copied content
+
+    // write new content
+    file.seek(SeekFrom::Start(offset.try_into().unwrap()))
+        .unwrap();
+    file.write_all(base64_encrypted_content.as_bytes()).unwrap();
+
+    // write old content
+    file.seek(SeekFrom::Start(
+        (offset + base64_encrypted_content.len()) as u64,
+    ))
+    .unwrap();
+    file.write_all(&below_file_content_bytes).unwrap();
+
+    // 5. Write new updated metadata in file
+
+    metadata.update_metadata_in_file(clogfile_path, password);
+}
 
 /// 1. Updates local metadata to include new file
 /// 2. Adds file content in the clogfile
@@ -43,11 +132,6 @@ pub fn add_file_with_content(
         encrypt_and_encode_content_to_base64(content, base64_key, base64_nonce);
     let content_len = base64_encrypted_content.len();
 
-    println!(
-        "encrypted file content : {}\nfile length : {}\n",
-        base64_encrypted_content, content_len
-    );
-
     // update length of file in local metadata
     metadata
         .folders
@@ -59,7 +143,7 @@ pub fn add_file_with_content(
         .update_length(content_len);
 
     // update header section to update metadata_offset
-    update_metadata_offset_and_length_in_file(clogfile_path, content_len, 0);
+    update_metadata_offset_and_length_in_file(clogfile_path, content_len as isize, 0);
 
     // write file content in the clogfile
     let mut file = open_file_read_write(clogfile_path);
@@ -110,11 +194,6 @@ pub fn parse_base64_encrypted_data(
     base64_key: &String,
     base64_nonce: &String,
 ) -> String {
-    println!(
-        "Parameters passed to parse_base64_encrypted_data :\nbase64_encrypted_content : {},\nbase64_key : {},\nbase64_nonce : {}\n",
-        base64_encrypted_data, base64_key, base64_nonce
-    );
-
     // extract key from base64
     let key_bytes = general_purpose::STANDARD.decode(base64_key).unwrap();
     let key = Key::<Aes256Gcm>::from_slice(&key_bytes);
@@ -122,6 +201,11 @@ pub fn parse_base64_encrypted_data(
     // extract nonce from base64
     let nonce_bytes = general_purpose::STANDARD.decode(base64_nonce).unwrap();
     let nonce = Nonce::from_slice(&nonce_bytes);
+
+    println!(
+        "parse_base64_encrypted_data : base64_encrypted_data : {}\nbase64_key : {},\nbase64_nonce : {}\n",
+        base64_encrypted_data, base64_key, base64_nonce
+    );
 
     // extract encrypted_metadata from base64
     let ciphertext_bytes = general_purpose::STANDARD
