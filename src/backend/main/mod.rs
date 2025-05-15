@@ -6,8 +6,13 @@ use super::{
 };
 use std::path::PathBuf;
 
+pub fn add_new_user(
+    username : &str,
+    password: &str,
+
+)
+
 pub fn add_file(
-    metadata: &mut Metadata,
     password: &str,
     clogfile_path: &PathBuf,
     filename: &str,
@@ -22,9 +27,12 @@ pub fn add_file(
         return Err("filename already exists!".to_string());
     }
 
+    // extract metadata from file 
+    let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+
     // if file doesn't exist than add file with content
     add_file_with_content(
-        metadata,
+        &mut metadata,
         &password.to_string(),
         foldername,
         filename,
@@ -35,7 +43,11 @@ pub fn add_file(
     Ok(())
 }
 
-pub fn add_folder(metadata: &mut Metadata) -> Result<(), String> {
+pub fn add_folder(clogfile_path: &PathBuf,password: &str) -> Result<(), String> {
+
+    // extract metadata from file 
+    let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+
     let foldername = Local::now().format("%d/%m/%Y").to_string();
 
     // check if folder exists in metadata
@@ -50,15 +62,17 @@ pub fn add_folder(metadata: &mut Metadata) -> Result<(), String> {
 }
 
 pub fn edit_file(
-    metadata: &mut Metadata,
     password: &str,
     clogfile_path: &PathBuf,
     filename: &str,
     foldername: &str,
     new_file_content: &str,
 ) {
+
+    let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+
     edit_file_with_content(
-        metadata,
+        &mut metadata,
         &password.to_string(),
         foldername,
         filename,
