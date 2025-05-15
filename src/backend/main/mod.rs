@@ -1,16 +1,17 @@
 use chrono::Local;
 
 use super::{
-    file_operations::content::{add_file_with_content, edit_file_with_content},
-    metadata::{folder, metadata::Metadata},
+    file_operations::{
+        content::{add_file_with_content, edit_file_with_content},
+        utils::make_new_clogfile,
+    },
+    metadata::metadata::Metadata,
 };
 use std::path::PathBuf;
 
-pub fn add_new_user(
-    username : &str,
-    password: &str,
-
-)
+pub fn add_new_user(clogfile_path: &PathBuf, password: &str) {
+    make_new_clogfile(&password.to_string(), clogfile_path);
+}
 
 pub fn add_file(
     password: &str,
@@ -19,6 +20,8 @@ pub fn add_file(
     foldername: &str,
     file_content: &str,
 ) -> Result<(), String> {
+    let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+
     // check if filename exists in folder
     let folder = metadata.folders.get_mut(foldername).unwrap();
 
@@ -27,7 +30,7 @@ pub fn add_file(
         return Err("filename already exists!".to_string());
     }
 
-    // extract metadata from file 
+    // extract metadata from file
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
     // if file doesn't exist than add file with content
@@ -43,9 +46,8 @@ pub fn add_file(
     Ok(())
 }
 
-pub fn add_folder(clogfile_path: &PathBuf,password: &str) -> Result<(), String> {
-
-    // extract metadata from file 
+pub fn add_folder(clogfile_path: &PathBuf, password: &str) -> Result<(), String> {
+    // extract metadata from file
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
     let foldername = Local::now().format("%d/%m/%Y").to_string();
@@ -68,7 +70,6 @@ pub fn edit_file(
     foldername: &str,
     new_file_content: &str,
 ) {
-
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
     edit_file_with_content(
@@ -81,7 +82,9 @@ pub fn edit_file(
     );
 }
 
-pub fn daily_check_and_update_metadata(metadata: &mut Metadata) {
+pub fn daily_check_and_update_metadata(clogfile_path: &PathBuf, password: &str) {
+    let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+
     let current_date = Local::now().format("%d/%m/%Y").to_string();
 
     for (folder_date, folder) in metadata.folders.iter_mut() {
