@@ -1,6 +1,6 @@
-pub mod config;
-pub mod file_operations;
-pub mod header;
+mod config;
+mod file_operations;
+mod header;
 pub mod main;
-pub mod metadata;
-pub mod user;
+mod metadata;
+mod user;
