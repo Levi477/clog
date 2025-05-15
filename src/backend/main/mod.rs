@@ -2,15 +2,33 @@ use chrono::Local;
 
 use super::{
     file_operations::{
-        content::{add_file_with_content, edit_file_with_content},
+        content::{add_file_with_content, decrypt_content_from_file, edit_file_with_content},
         utils::make_new_clogfile,
     },
     metadata::metadata::Metadata,
 };
 use std::path::PathBuf;
 
+pub fn get_file_content(
+    clogfile_path: &PathBuf,
+    filename: &str,
+    foldername: &str,
+    password: &str,
+) -> String {
+    let metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+    decrypt_content_from_file(&metadata, foldername, filename, clogfile_path)
+}
+
 pub fn add_new_user(clogfile_path: &PathBuf, password: &str) {
     make_new_clogfile(&password.to_string(), clogfile_path);
+}
+
+pub fn get_metadata(password: &str, clogfile_path: &PathBuf) -> String {
+    serde_json::to_string(&Metadata::extract_metadata_from_file(
+        clogfile_path,
+        password,
+    ))
+    .unwrap()
 }
 
 pub fn add_file(

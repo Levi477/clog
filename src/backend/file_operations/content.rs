@@ -202,11 +202,6 @@ pub fn parse_base64_encrypted_data(
     let nonce_bytes = general_purpose::STANDARD.decode(base64_nonce).unwrap();
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    println!(
-        "parse_base64_encrypted_data : base64_encrypted_data : {}\nbase64_key : {},\nbase64_nonce : {}\n",
-        base64_encrypted_data, base64_key, base64_nonce
-    );
-
     // extract encrypted_metadata from base64
     let ciphertext_bytes = general_purpose::STANDARD
         .decode(base64_encrypted_data)
