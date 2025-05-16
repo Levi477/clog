@@ -66,9 +66,9 @@ fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
 
 /// Get Metadata in json_serialized
 #[pyfunction]
-fn get_metadata(password: &str, clogfile_path: &str) -> String {
+fn get_clean_metadata(password: &str, clogfile_path: &str) -> String {
     let path = PathBuf::from(clogfile_path);
-    main::get_metadata(password, &path)
+    main::get_clean_metadata(password, &path)
 }
 
 /// PyO3 modu#[pymodule]
@@ -77,7 +77,7 @@ fn clog(_py: Python, m: Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(add_new_user, &m)?)?;
     m.add_function(wrap_pyfunction!(add_folder, &m)?)?;
     m.add_function(wrap_pyfunction!(edit_file, &m)?)?;
-    m.add_function(wrap_pyfunction!(get_metadata, &m)?)?;
+    m.add_function(wrap_pyfunction!(get_clean_metadata, &m)?)?;
     m.add_function(wrap_pyfunction!(get_file_content, &m)?)?;
     m.add_function(wrap_pyfunction!(add_file, &m)?)?;
     m.add_function(wrap_pyfunction!(daily_check_and_update_metadata, &m)?)?;

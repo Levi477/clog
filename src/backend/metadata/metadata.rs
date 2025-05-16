@@ -23,7 +23,7 @@ use std::{
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
     pub folders: HashMap<String, Folder>,
-    created_at: String,
+    pub created_at: String,
 }
 
 impl Metadata {
