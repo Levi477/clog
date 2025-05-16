@@ -1,5 +1,6 @@
 use super::{super::metadata, content::add_file_with_content};
 use crate::backend::{
+    config::CLOG_VERSION,
     header::utils::{HEADER_LENGTH, init},
     user::utils::generate_keys::{generate_base64_nonce, generate_base64_salt},
 };
@@ -37,8 +38,13 @@ pub fn make_new_clogfile(password: &String, clogfile_path: &PathBuf) {
     let base64_nonce = generate_base64_nonce();
 
     // used 312 as temp metadata length
-    let (header_line1, header_line2) =
-        init("0.0.1", 312, HEADER_LENGTH, &base64_salt, &base64_nonce);
+    let (header_line1, header_line2) = init(
+        CLOG_VERSION,
+        312,
+        HEADER_LENGTH,
+        &base64_salt,
+        &base64_nonce,
+    );
 
     let mut file = open_file_read_write(clogfile_path);
 

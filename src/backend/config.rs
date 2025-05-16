@@ -1,1 +1,1 @@
-pub const VERSION: &str = "1.0.0";
+pub const CLOG_VERSION: &str = "0.0.1";
