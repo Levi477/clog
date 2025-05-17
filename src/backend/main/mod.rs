@@ -6,7 +6,10 @@ use super::{
     metadata::metadata::Metadata,
 };
 use chrono::Local;
+use pyo3::exceptions::PyValueError;
+use pyo3::prelude::*;
 use serde_json::{Value, json};
+use std::panic;
 use std::path::PathBuf;
 
 pub fn get_file_content(
@@ -23,32 +26,39 @@ pub fn add_new_user(clogfile_path: &PathBuf, password: &str) {
     make_new_clogfile(&password.to_string(), clogfile_path);
 }
 
-pub fn get_clean_metadata(password: &str, clogfile_path: &PathBuf) -> String {
-    // Extract full metadata
-    let metadata: Metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
+pub fn get_clean_metadata(password: &str, clogfile_path: &PathBuf) -> PyResult<String> {
+    let result = panic::catch_unwind(|| {
+        // Extract full metadata
+        let metadata: Metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
-    // Prepare JSON map for folders
-    let mut folders_json = serde_json::Map::new();
+        // Prepare JSON map for folders
+        let mut folders_json = serde_json::Map::new();
 
-    for (folder_name, folder) in metadata.folders {
-        let mut folder_json = serde_json::Map::new();
+        for (folder_name, folder) in metadata.folders {
+            let mut folder_json = serde_json::Map::new();
 
-        for (file_name, file) in folder.files {
-            // Only include created_at per file
-            folder_json.insert(file_name, json!({ "created_at": file.created_at }));
+            for (file_name, file) in folder.files {
+                folder_json.insert(file_name, json!({ "created_at": file.created_at }));
+            }
+
+            folders_json.insert(folder_name, Value::Object(folder_json));
         }
 
-        folders_json.insert(folder_name, Value::Object(folder_json));
+        // Build root JSON with folders + top-level created_at
+        let mut root_json = serde_json::Map::new();
+        root_json.insert("folders".to_string(), Value::Object(folders_json));
+        root_json.insert("created_at".to_string(), json!(metadata.created_at));
+
+        serde_json::to_string_pretty(&Value::Object(root_json)).unwrap()
+    });
+
+    match result {
+        Ok(data) => Ok(data),
+        Err(_) => Err(PyErr::new::<PyValueError, _>(
+            "Wrong password or corrupted file",
+        )),
     }
-
-    // Build root JSON with folders + top-level created_at
-    let mut root_json = serde_json::Map::new();
-    root_json.insert("folders".to_string(), Value::Object(folders_json));
-    root_json.insert("created_at".to_string(), json!(metadata.created_at));
-
-    serde_json::to_string_pretty(&Value::Object(root_json)).unwrap()
 }
-
 pub fn add_file(
     password: &str,
     clogfile_path: &PathBuf,

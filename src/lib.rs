@@ -66,7 +66,7 @@ fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
 
 /// Get Metadata in json_serialized
 #[pyfunction]
-fn get_clean_metadata(password: &str, clogfile_path: &str) -> String {
+fn get_clean_metadata(password: &str, clogfile_path: &str) -> PyResult<String> {
     let path = PathBuf::from(clogfile_path);
     main::get_clean_metadata(password, &path)
 }
