@@ -23,9 +23,6 @@ crate-type = ["cdylib"]
 [build-dependencies]
 pyo3-build-config = "0.25.0"
 
-[package.metadata.pyo3]
-generate-stubs = true
-
 [profile.release]
 opt-level = 3          
 lto = "fat"            
