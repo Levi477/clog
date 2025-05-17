@@ -120,12 +120,18 @@ pub fn edit_file(
 
 pub fn daily_check_and_update_metadata(clogfile_path: &PathBuf, password: &str) {
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
-
+    let mut current_folder_exists = false;
     let current_date = Local::now().format("%d/%m/%Y").to_string();
 
     for (folder_date, folder) in metadata.folders.iter_mut() {
         if *folder_date != current_date {
             folder.make_read_only();
+        } else {
+            current_folder_exists = true;
+        }
+
+        if !current_folder_exists {
+            add_folder(clogfile_path, password).unwrap();
         }
     }
 }
