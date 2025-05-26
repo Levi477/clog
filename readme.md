@@ -1,6 +1,6 @@
-# 🛡️ clog — Cryptographically Secure Daily Journal Crate
+# 🛡️ clog — Cryptographically Secure Daily Journal/Diary 
 
-`clog` is a Rust crate for safely creating, storing, and updating **daily notes or any content** using **cryptographically secure methods**. All files and metadata are stored in a **single encrypted `.clog(or custom file)` file**, making your private thoughts or sensitive content both secure and portable. Without the correct password, **no content can be accessed**.
+`clog` is a Rust crate for safely creating, storing, and updating **daily notes or any content** using **cryptographically secure methods**. All files and metadata are stored in a **single encrypted `.clog(or custom file extension)` file**, making your private thoughts or sensitive content both secure and portable. Without the correct password, **no content can be accessed**.
 
 This crate is ideal for **diary writing**, **private note-taking**, or **storing content**, where privacy and tamper-resistance are essential.
 
@@ -23,7 +23,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clog = "0.1"
+clog-rs = "0.0.1"
 ```
 
 ---

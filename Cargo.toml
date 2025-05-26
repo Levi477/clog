@@ -1,5 +1,5 @@
 [package]
-name = "clog"
+name = "clog-rs"
 version = "0.0.1"
 edition = "2024"
 description = "A cryptographically secure content storing library. Provides simple APIs to create, read, and edit files without compromising security."
@@ -12,7 +12,7 @@ categories = ["cryptography", "text-processing", "data-structures"]
 exclude = ["/target", "*.clog"]                        
 
 [lib]
-name = "clog"
+name = "clog-rs"
 path = "src/lib.rs"   
 
 [dependencies]
