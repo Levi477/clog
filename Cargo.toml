@@ -4,7 +4,9 @@ version = "0.0.1"
 edition = "2024"
 
 [lib]
-name = "clog"  
+name = "clog" 
+description = "A cryptographically secure content storing library.Providing simple API to create, read and edit file without compromising security."
+license = "MIT"
 
 [dependencies]
 aes-gcm = "0.10.3"
