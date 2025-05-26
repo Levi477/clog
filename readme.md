@@ -144,7 +144,7 @@ Internally, metadata is securely stored in the `.clog(or custom file extension)`
 ## 🚀 Example Usage
 
 ```rust
-use clog::*;
+use clog_rs::*;
 
 let clog_path = "my_journal.clog";
 let password = "super_secure_password";
