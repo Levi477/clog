@@ -153,10 +153,10 @@ let password = "super_secure_password";
 add_new_user(password, clog_path);
 
 // Step 2: Add a new entry
-add_file(password, clog_path, "reflection.txt", "Today I learned something new...");
+add_file(password, clog_path, "something", "Today I learned something new...");
 
 // Step 3: Read it later
-let content = get_file_content(password, clog_path, "reflection.txt", "25/05/2025");
+let content = get_file_content(password, clog_path, "something", "25/05/2025");
 println!("Decrypted entry: {}", content);
 
 // Step 4: View metadata
