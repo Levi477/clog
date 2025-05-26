@@ -2,11 +2,18 @@
 name = "clog"
 version = "0.0.1"
 edition = "2024"
+description = "A cryptographically secure content storing library. Provides simple APIs to create, read, and edit files without compromising security."
+license = "MIT"
+authors = ["Deep Gajjar"]
+repository = "https://github.com/Levi477/clog"  
+readme = "readme.md"                                  
+keywords = ["encryption", "journal", "secure", "diary"]
+categories = ["cryptography", "text-processing", "data-structures"]
+exclude = ["/target", "*.clog"]                        
 
 [lib]
-name = "clog" 
-description = "A cryptographically secure content storing library.Providing simple API to create, read and edit file without compromising security."
-license = "MIT"
+name = "clog"
+path = "src/lib.rs"   
 
 [dependencies]
 aes-gcm = "0.10.3"
@@ -21,7 +28,7 @@ serde_json = "1.0.140"
 sha2 = "0.10.9"
 
 [profile.release]
-opt-level = 3          
-lto = "fat"            
-codegen-units = 1      
-strip = "symbols"      
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
