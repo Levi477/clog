@@ -23,7 +23,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clog-rs = "0.0.1"
+clog_rs = "0.0.1"
 ```
 
 ---
