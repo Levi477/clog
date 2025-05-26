@@ -1,26 +1,28 @@
-use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
 use std::path::PathBuf;
 mod backend;
 use backend::main;
+use chrono::Local;
+
+/// Daily check and update
+fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
+    let path = PathBuf::from(clogfile_path);
+    main::daily_check_and_update_metadata(&path, password);
+}
+
+/// Adds a folder
+fn add_folder(clogfile_path: &str, password: &str) {
+    let path = PathBuf::from(clogfile_path);
+    main::add_folder(&path, password).unwrap();
+}
 
 /// Adds a new user
-#[pyfunction]
-fn add_new_user(password: &str, clogfile_path: &str) {
+pub fn add_new_user(password: &str, clogfile_path: &str) {
     let path = PathBuf::from(clogfile_path);
     main::add_new_user(&path, password);
 }
 
-/// Adds a folder
-#[pyfunction]
-fn add_folder(clogfile_path: &str, password: &str) -> PyResult<()> {
-    let path = PathBuf::from(clogfile_path);
-    main::add_folder(&path, password).map_err(|e| PyErr::new::<pyo3::exceptions::PyException, _>(e))
-}
-
 /// Edits a file
-#[pyfunction]
-fn edit_file(
+pub fn update_file_content(
     password: &str,
     clogfile_path: &str,
     filename: &str,
@@ -32,8 +34,7 @@ fn edit_file(
 }
 
 /// Decrypt file
-#[pyfunction]
-fn get_file_content(
+pub fn get_file_content(
     password: &str,
     clogfile_path: &str,
     filename: &str,
@@ -44,42 +45,15 @@ fn get_file_content(
 }
 
 /// Adds a file
-#[pyfunction]
-fn add_file(
-    password: &str,
-    clogfile_path: &str,
-    filename: &str,
-    foldername: &str,
-    file_content: &str,
-) -> PyResult<()> {
+pub fn add_file(password: &str, clogfile_path: &str, filename: &str, file_content: &str) {
+    let foldername = Local::now().format("%d/%m/%Y").to_string();
     let path = PathBuf::from(clogfile_path);
-    main::add_file(password, &path, filename, foldername, file_content)
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyException, _>(e))
-}
-
-/// Daily check and update
-#[pyfunction]
-fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
-    let path = PathBuf::from(clogfile_path);
-    main::daily_check_and_update_metadata(&path, password);
+    daily_check_and_update_metadata(clogfile_path, password);
+    main::add_file(password, &path, filename, &foldername, file_content).unwrap();
 }
 
 /// Get Metadata in json_serialized
-#[pyfunction]
-fn get_clean_metadata(password: &str, clogfile_path: &str) -> PyResult<String> {
+pub fn get_json_metadata(password: &str, clogfile_path: &str) -> String {
     let path = PathBuf::from(clogfile_path);
     main::get_clean_metadata(password, &path)
-}
-
-/// PyO3 modu#[pymodule]
-#[pymodule]
-fn clog(_py: Python, m: Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(add_new_user, &m)?)?;
-    m.add_function(wrap_pyfunction!(add_folder, &m)?)?;
-    m.add_function(wrap_pyfunction!(edit_file, &m)?)?;
-    m.add_function(wrap_pyfunction!(get_clean_metadata, &m)?)?;
-    m.add_function(wrap_pyfunction!(get_file_content, &m)?)?;
-    m.add_function(wrap_pyfunction!(add_file, &m)?)?;
-    m.add_function(wrap_pyfunction!(daily_check_and_update_metadata, &m)?)?;
-    Ok(())
 }

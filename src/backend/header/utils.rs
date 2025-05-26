@@ -1,6 +1,5 @@
 use crate::backend::{
     file_operations::utils::{open_file_read, open_file_read_write},
-    metadata,
     user::utils::generate_keys::generate_base64_nonce,
 };
 use std::{
