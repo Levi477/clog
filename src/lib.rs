@@ -19,6 +19,7 @@ fn add_folder(clogfile_path: &str, password: &str) {
 pub fn add_new_user(password: &str, clogfile_path: &str) {
     let path = PathBuf::from(clogfile_path);
     main::add_new_user(&path, password);
+    daily_check_and_update_metadata(clogfile_path, password);
 }
 
 /// Edits a file
@@ -54,6 +55,7 @@ pub fn add_file(password: &str, clogfile_path: &str, filename: &str, file_conten
 
 /// Get Metadata in json_serialized
 pub fn get_json_metadata(password: &str, clogfile_path: &str) -> String {
+    daily_check_and_update_metadata(clogfile_path, password);
     let path = PathBuf::from(clogfile_path);
     main::get_clean_metadata(password, &path)
 }
