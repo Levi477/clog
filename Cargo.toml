@@ -1,6 +1,6 @@
 [package]
 name = "clog_rs"
-version = "0.0.3"
+version = "0.0.4"
 edition = "2024"
 description = "A cryptographically secure content storing library. Provides simple APIs to create, read, and edit files without compromising security."
 license = "MIT"

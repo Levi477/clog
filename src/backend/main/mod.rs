@@ -45,7 +45,7 @@ pub fn get_clean_metadata(password: &str, clogfile_path: &PathBuf) -> String {
     root_json.insert("folders".to_string(), Value::Object(folders_json));
     root_json.insert("created_at".to_string(), json!(metadata.created_at));
 
-    serde_json::to_string_pretty(&Value::Object(root_json)).unwrap()
+    serde_json::to_string(&Value::Object(root_json)).unwrap()
 }
 pub fn add_file(
     password: &str,
