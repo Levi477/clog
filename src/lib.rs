@@ -12,7 +12,7 @@ fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
 /// Adds a folder
 fn add_folder(clogfile_path: &str, password: &str) {
     let path = PathBuf::from(clogfile_path);
-    main::add_folder(&path, password).unwrap();
+    main::add_folder(&path, password);
 }
 
 /// Adds a new user
@@ -50,7 +50,7 @@ pub fn add_file(password: &str, clogfile_path: &str, filename: &str, file_conten
     let foldername = Local::now().format("%d/%m/%Y").to_string();
     let path = PathBuf::from(clogfile_path);
     daily_check_and_update_metadata(clogfile_path, password);
-    main::add_file(password, &path, filename, &foldername, file_content).unwrap();
+    main::add_file(password, &path, filename, &foldername, file_content);
 }
 
 /// Get Metadata in json_serialized

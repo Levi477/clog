@@ -53,7 +53,7 @@ pub fn add_file(
     filename: &str,
     foldername: &str,
     file_content: &str,
-) -> Result<(), String> {
+) {
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
     // check if filename exists in folder
@@ -61,7 +61,7 @@ pub fn add_file(
 
     // if file does exists return error message
     if folder.files.get(filename).is_some() {
-        return Err("filename already exists!".to_string());
+        return;
     }
 
     // extract metadata from file
@@ -76,11 +76,9 @@ pub fn add_file(
         file_content,
         clogfile_path,
     );
-
-    Ok(())
 }
 
-pub fn add_folder(clogfile_path: &PathBuf, password: &str) -> Result<(), String> {
+pub fn add_folder(clogfile_path: &PathBuf, password: &str) {
     // extract metadata from file
     let mut metadata = Metadata::extract_metadata_from_file(clogfile_path, password);
 
@@ -88,13 +86,11 @@ pub fn add_folder(clogfile_path: &PathBuf, password: &str) -> Result<(), String>
 
     // check if folder exists in metadata
     if metadata.folders.get(&foldername).is_some() {
-        return Err(String::from("folder already exists"));
+        return;
     }
 
     // if folder doesn't exists than make new one using current date
     metadata.add_latest_folder();
-
-    Ok(())
 }
 
 pub fn edit_file(
@@ -129,7 +125,7 @@ pub fn daily_check_and_update_metadata(clogfile_path: &PathBuf, password: &str) 
         }
 
         if !current_folder_exists {
-            add_folder(clogfile_path, password).unwrap();
+            add_folder(clogfile_path, password);
         }
     }
 }
