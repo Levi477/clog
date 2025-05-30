@@ -11,7 +11,7 @@ use crate::backend::{
 };
 use aes_gcm::{Aes256Gcm, Key, KeyInit, Nonce, aead::Aead};
 use base64::{Engine, engine::general_purpose};
-use chrono::{Local, NaiveTime};
+use chrono::Local;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -56,28 +56,6 @@ impl Metadata {
         let filemap = self.folders.get_mut(foldername).unwrap();
         let file = filemap.files.get_mut(filename).unwrap();
         file.update_length(length);
-    }
-
-    fn get_all_clone_files_below_given_file(
-        &self,
-        foldername: &str,
-        filename: &str,
-    ) -> HashMap<String, File> {
-        let filemap = self.get_all_files_under_folder(foldername);
-        let basefile_time = &filemap.get(filename).unwrap().created_at;
-        let basefile_time = NaiveTime::parse_from_str(&basefile_time, "%I:%M:%S %p").unwrap();
-
-        filemap
-            .iter()
-            .filter_map(|(name, file)| {
-                let file_time = NaiveTime::parse_from_str(&file.created_at, "%I:%M:%S %p").unwrap();
-                if file_time > basefile_time {
-                    Some((name.clone(), file.clone()))
-                } else {
-                    None
-                }
-            })
-            .collect()
     }
 
     fn get_serialized_metadata(&self) -> String {

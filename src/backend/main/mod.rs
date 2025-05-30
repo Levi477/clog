@@ -91,6 +91,8 @@ pub fn add_folder(clogfile_path: &PathBuf, password: &str) {
 
     // if folder doesn't exists than make new one using current date
     metadata.add_latest_folder();
+
+    metadata.update_metadata_in_file(clogfile_path, &password.to_owned());
 }
 
 pub fn edit_file(

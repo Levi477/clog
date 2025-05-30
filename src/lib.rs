@@ -9,12 +9,6 @@ fn daily_check_and_update_metadata(clogfile_path: &str, password: &str) {
     main::daily_check_and_update_metadata(&path, password);
 }
 
-/// Adds a folder
-fn add_folder(clogfile_path: &str, password: &str) {
-    let path = PathBuf::from(clogfile_path);
-    main::add_folder(&path, password);
-}
-
 /// Adds a new user
 pub fn add_new_user(password: &str, clogfile_path: &str) {
     let path = PathBuf::from(clogfile_path);
