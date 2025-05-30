@@ -1,10 +1,14 @@
-# 🛡️ clog — Cryptographically Secure Daily Journal/Diary 
+# 🛡️ clog — Cryptographically Secure Daily Journal/Diary API 
 
 `clog` is a Rust crate for safely creating, storing, and updating **daily notes or any content** using **cryptographically secure methods**. All files and metadata are stored in a **single encrypted `.clog(or custom file extension)` file**, making your private thoughts or sensitive content both secure and portable. Without the correct password, **no content can be accessed**.
 
 This crate is ideal for **diary writing**, **private note-taking**, or **storing content**, where privacy and tamper-resistance are essential.
 
 ---
+
+## Application 
+
+- Try the TUI daily diary tool made using clog_rs : https://github.com/Levi477/clog-tui/releases/tag/v1.3.0
 
 ## ✨ Features
 
@@ -23,7 +27,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-clog_rs = "0.0.1"
+clog_rs = "1.0.0"
 ```
 
 ---
@@ -37,16 +41,6 @@ add_new_user(password: &str, clogfile_path: &str)
 ```
 
 Creates a new encrypted `.clog(or custom file extension)` file with a user.
-
----
-
-### 📁 Add a Folder
-
-```rust
-add_folder(clogfile_path: &str, password: &str)
-```
-
-Creates a new folder for the current date. Automatically handled internally.
 
 ---
 
