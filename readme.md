@@ -8,7 +8,7 @@ This crate is ideal for **diary writing**, **private note-taking**, or **storing
 
 ## Application 
 
-- Try the TUI daily diary tool made using clog_rs : https://github.com/Levi477/clog-tui/releases/tag/v1.3.0
+- Try the terminal-based daily diary tool built with clog_rs: [clog-tui v1.3.0](https://github.com/Levi477/clog-tui/releases/tag/v1.3.0)
 
 ## ✨ Features
 
